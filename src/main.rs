@@ -1,3 +1,9 @@
+// This code is based in the video https://www.youtube.com/watch?v=r6sGWTCMz2k
+// magnitude: length of the vector (distance from origin).
+// phase: angle of the vector in radians.
+// rotate(angle): rotates the complex number by angle radians (using 2D rotation formula).
+// add: adds two complex numbers component-wise.
+
 use raylib::prelude::*;
 use std::f32::consts::PI;
 
@@ -85,7 +91,12 @@ fn main() {
             let start = Vector2::new(center.x + prev.re, center.y + prev.im);
             let end = Vector2::new(center.x + current.re, center.y + current.im);
 
-            d.draw_circle_lines(start.x as i32, start.y as i32, rot.magnitude(), Color::DARKGRAY);
+            d.draw_circle_lines(
+                start.x as i32,
+                start.y as i32,
+                rot.magnitude(),
+                Color::DARKGRAY,
+            );
             d.draw_line_ex(start, end, 2.0, Color::WHITE);
         }
         let tip = Vector2::new(center.x + current.re, center.y + current.im);

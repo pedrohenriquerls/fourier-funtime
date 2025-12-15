@@ -79,7 +79,7 @@ impl PathFourier {
 
         let path_center_x = path_points.iter().map(|p| p.x).sum::<f32>() / path_points.len() as f32;
         let path_center_y = path_points.iter().map(|p| p.y).sum::<f32>() / path_points.len() as f32;
-        
+
         let complex_signal: Vec<Complex> = path_points
             .iter()
             .map(|p| Complex::new(p.x - path_center_x, p.y - path_center_y))
@@ -173,7 +173,7 @@ fn compute_complex_dft(signal: &[Complex], num_components: usize) -> Vec<Fourier
     }
 
     let mut components = Vec::new();
-    
+
     for k in 0..n {
         let mut sum = Complex::new(0.0, 0.0);
 
@@ -190,7 +190,7 @@ fn compute_complex_dft(signal: &[Complex], num_components: usize) -> Vec<Fourier
         } else {
             k as i32 - n as i32
         };
-        
+
         components.push(FourierComponent { freq, coef });
     }
 
@@ -270,26 +270,81 @@ fn main() {
     let num_components = 100;
     let show_circles = true;
 
-    let square_path = create_square_path(150.0);
-    let circle_path = create_circle_path(120.0);
-    let heart_path = create_heart_path(6.0);
+    // let square_path = create_square_path(150.0);
+    // let circle_path = create_circle_path(120.0);
+    // let heart_path = create_heart_path(6.0);
 
-    let square_path2 = create_square_path(130.0);
-    let circle_path2 = create_circle_path(110.0);
-    let heart_path2 = create_heart_path(5.5);
+    // let square_path2 = create_square_path(130.0);
+    // let circle_path2 = create_circle_path(110.0);
+    // let heart_path2 = create_heart_path(5.5);
 
     let mut paths = vec![
-        PathFourier::new(&square_path, Vector2::new(300.0, 200.0), Color::GREEN, num_components),
-        PathFourier::new(&circle_path, Vector2::new(600.0, 200.0), Color::BLUE, num_components),
-        PathFourier::new(&heart_path, Vector2::new(900.0, 200.0), Color::RED, num_components),
-        PathFourier::new(&square_path2, Vector2::new(300.0, 500.0), Color::YELLOW, num_components),
-        PathFourier::new(&circle_path2, Vector2::new(600.0, 500.0), Color::MAGENTA, num_components),
-        PathFourier::new(&heart_path2, Vector2::new(900.0, 500.0), Color::ORANGE, num_components),
+    //     PathFourier::new(&square_path, Vector2::new(300.0, 200.0), Color::GREEN, num_components),
+    //     PathFourier::new(&circle_path, Vector2::new(600.0, 200.0), Color::BLUE, num_components),
+    //     PathFourier::new(&heart_path, Vector2::new(900.0, 200.0), Color::RED, num_components),
+    //     PathFourier::new(&square_path2, Vector2::new(300.0, 500.0), Color::YELLOW, num_components),
+    //     PathFourier::new(&circle_path2, Vector2::new(600.0, 500.0), Color::MAGENTA, num_components),
+    //     PathFourier::new(&heart_path2, Vector2::new(900.0, 500.0), Color::ORANGE, num_components),
     ];
 
+    let mut drawing = false;
+    let mut drawing_points: Vec<Vector2> = Vec::new();
+    let mut last_mouse_pos: Option<Vector2> = None;
+
     while !rl.window_should_close() {
+        let mouse_pos = rl.get_mouse_position();
+        let mouse_down = rl.is_mouse_button_down(MouseButton::MOUSE_BUTTON_LEFT);
+
+        if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
+            if drawing {
+                drawing = false;
+                if drawing_points.len() > 10 {
+                    let center = Vector2::new(600.0, 400.0);
+                    let user_path = PathFourier::new(&drawing_points, center, Color::WHITE, num_components);
+                    paths.push(user_path);
+                }
+                drawing_points.clear();
+                last_mouse_pos = None;
+            } else {
+                drawing = true;
+                drawing_points.clear();
+                last_mouse_pos = None;
+            }
+        }
+
+        if rl.is_key_pressed(KeyboardKey::KEY_C) {
+            drawing_points.clear();
+            last_mouse_pos = None;
+        }
+
+        if drawing && mouse_down {
+            if let Some(last) = last_mouse_pos {
+                let dist = (mouse_pos.x - last.x).powi(2) + (mouse_pos.y - last.y).powi(2);
+                if dist > 4.0 {
+                    drawing_points.push(mouse_pos);
+                    last_mouse_pos = Some(mouse_pos);
+                }
+            } else {
+                drawing_points.push(mouse_pos);
+                last_mouse_pos = Some(mouse_pos);
+            }
+        } else if !mouse_down {
+            last_mouse_pos = None;
+        }
+
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::BLACK);
+
+        if drawing {
+            d.draw_text("Drawing mode: Hold LEFT MOUSE to draw, SPACE to finish, C to clear", 10, 10, 20, Color::YELLOW);
+            if drawing_points.len() > 1 {
+                for i in 1..drawing_points.len() {
+                    d.draw_line_ex(drawing_points[i - 1], drawing_points[i], 2.0, Color::WHITE);
+                }
+            }
+        } else {
+            d.draw_text("Press SPACE to start drawing your own shape", 10, 10, 20, Color::GRAY);
+        }
 
         for path in &mut paths {
             if show_circles {
